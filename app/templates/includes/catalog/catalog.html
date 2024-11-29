@@ -11,7 +11,7 @@
                 <div class="prod-i-actions">
                     <div class="prod-i-actions-in">
                         <p class="prod-i-cart">
-                            <a href="#" class="hover-label prod-addbtn"><i class="icon ion-android-cart"></i><span>Añadir al carrito</span></a>
+                            <a href="{% url 'app:add_to_cart' product.id %}" class="hover-label prod-addbtn"><i class="icon ion-android-cart"></i><span>Añadir al carrito</span></a>
                         </p>
                     </div>
                 </div>
