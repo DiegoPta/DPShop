@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 
 # Project imports.
 from app.models import Category, Product, Customer
@@ -91,9 +92,26 @@ def clear_cart(request: HttpRequest) -> HttpResponse:
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
-def login_or_create_user(request: HttpRequest) -> HttpResponse:
+def login_user(request: HttpRequest) -> HttpResponse:
     """
-    View function to handle user login or creation.
+    View function to login a user.
+    """
+    context = {}
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        if authenticated_user := authenticate(request, username=username, password=password):
+            login(request, authenticated_user)
+            return redirect('app:account')
+        else:
+            context['message'] = 'Authentication error'
+    
+    return render(request, 'login.html', context)
+
+
+def create_user(request: HttpRequest) -> HttpResponse:
+    """
+    View function to handle user creation.
     """
     if request.method == 'POST':
         new_username = request.POST.get('new_username')
@@ -102,16 +120,20 @@ def login_or_create_user(request: HttpRequest) -> HttpResponse:
             if new_user := User.objects.create_user(username=new_username, password=new_password):
                 login(request, new_user)
                 return redirect('app:account')
-        print('User exists or bad data!!!')
+    
     return render(request, 'login.html')
 
 
+@login_required(login_url='/users/login/')
 def get_account(request: HttpRequest) -> HttpResponse:
     """
     View function to handle user account.
     """
-    
     user = request.user
+    user_data = {'first_name': user.first_name,
+                 'last_name': user.last_name,
+                 'email': user.email}
+    
     if request.method == 'POST':
         customer_form = CustomerForm(request.POST)
         if customer_form.is_valid():
@@ -124,17 +146,13 @@ def get_account(request: HttpRequest) -> HttpResponse:
                     customer_data.pop(field)
             user.save()
 
-            customer = Customer(**customer_data, user=user)
-            customer.save()
-            return redirect('app:account')
-    else:
-        if customer := Customer.objects.filter(user=user):
-            customer = customer.first()
-            customer_form = CustomerForm(instance=customer)
-            customer_form.first_name = customer.user.first_name
-            customer_form.last_name = customer.user.last_name
-            customer_form.email = customer.user.email
-        else:
-            customer_form = CustomerForm()
+            Customer.objects.update_or_create(defaults=customer_data, user=user)
+
+    elif customer := Customer.objects.filter(user=user).first():
+        user_data['document_id'] = customer.document_id
+        user_data['gender'] = customer.gender
+        user_data['birthdate'] = customer.birthdate
+        user_data['phone'] = customer.phone
+        user_data['address'] = customer.address
         
-    return render(request, 'account.html', {'customer_form': customer_form})
+    return render(request, 'account.html', {'customer_form': CustomerForm(user_data)})
