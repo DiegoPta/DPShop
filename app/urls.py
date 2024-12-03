@@ -20,4 +20,6 @@ urlpatterns = [
     path('cart/add/<int:product_id>', views.add_to_cart, name='add_to_cart'),
     path('cart/remove/<int:product_id>', views.remove_from_cart, name='remove_from_cart'),
     path('cart/clear/', views.clear_cart, name='clear_cart'),
+    path('users/login/', views.login_or_create_user, name='login_or_create_user'),
+    path('users/account/', views.get_account, name='account'),
 ]

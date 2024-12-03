@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1 class="maincont-ttl">Welcome - {{ user.username }}</h1>
+<ul class="b-crumbs">
+    <li><a href="/">Home</a></li>
+    <li>My account</li>
+</ul>
+
+{% if message %}
+<h2>{{message}}</h2>
+{% endif %}
+    
+<article class="page-cont">
+    <div class="page-styling">
+        <div class="auth-wrap">
+            <div class="auth-col">
+                <h2>Peronal information</h2>
+                <form method="POST" action="{% url 'app:account' %}" class="register">
+                    {% csrf_token %}
+                    {{ customer_form.as_p }}
+                    <p class="auth-submit">
+                        <input type="submit" value="Actualizar Datos">
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

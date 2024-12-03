@@ -45,8 +45,13 @@ class Customer(models.Model):
         verbose_name = 'Customer'
         verbose_name_plural = 'Customers'
 
+    GENDER_CHOICES = (
+        ('F', 'Female'),
+        ('M', 'Male'),
+    )
+
     document_id = models.CharField(max_length=12)
-    gender = models.CharField(max_length=1, default='F')
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, default='F')
     phone = models.CharField(max_length=20)
     birthdate = models.DateField(null=True, blank=True)
     address = models.TextField()
