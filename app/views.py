@@ -96,17 +96,30 @@ def login_user(request: HttpRequest) -> HttpResponse:
     """
     View function to login a user.
     """
-    context = {}
+    context = {'destination_page': request.GET.get('next', '')}
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        destination_page = request.POST['destination_page']
+
         if authenticated_user := authenticate(request, username=username, password=password):
             login(request, authenticated_user)
-            return redirect('app:account')
+            return redirect('app:account' if not destination_page else destination_page)
         else:
             context['message'] = 'Authentication error'
+    else:
+        if request.user.is_authenticated:
+            return redirect('app:account')
     
     return render(request, 'login.html', context)
+
+
+def logout_user(request: HttpRequest) -> HttpResponse:
+    """
+    View function to logout a user.
+    """
+    logout(request)
+    return redirect('app:login_user')
 
 
 def create_user(request: HttpRequest) -> HttpResponse:
@@ -156,3 +169,20 @@ def get_account(request: HttpRequest) -> HttpResponse:
         user_data['address'] = customer.address
         
     return render(request, 'account.html', {'customer_form': CustomerForm(user_data)})
+
+
+@login_required(login_url='/users/login/')
+def register_order(request: HttpRequest) -> HttpResponse:
+    """
+    View function to handle order registration.
+    """
+    user = request.user
+    user_data = {'first_name': user.first_name,
+                 'last_name': user.last_name,
+                 'email': user.email}
+    
+    if customer := Customer.objects.filter(user=user).first():
+        user_data['phone'] = customer.phone
+        user_data['address'] = customer.address
+    
+    return render(request, 'order.html', {'customer_form': CustomerForm(user_data)})

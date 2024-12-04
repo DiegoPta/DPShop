@@ -25,7 +25,7 @@
             <p class="total"><b>Total:</b> ${{ request.session.cart_total_amount }}</p>
             <p class="buttons">
                 <a href="{% url 'app:cart' %}" class="button">See cart</a>
-                <a href="#" class="button">Order</a>
+                <a href="{% url 'app:register_order' %}" class="button">Order</a>
             </p>
         </div>
     </div>
