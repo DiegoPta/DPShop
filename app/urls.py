@@ -25,4 +25,6 @@ urlpatterns = [
     path('users/create/', views.create_user, name='create_user'),
     path('users/account/', views.get_account, name='account'),
     path('order/register/', views.register_order, name='register_order'),
+    path('order/confirm/', views.confirm_order, name='confirm_order'),
+    path('order/thanks/', views.thanks, name='thanks'),
 ]

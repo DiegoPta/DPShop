@@ -4,13 +4,16 @@ Views for the product catalog.
 
 # Django imports.
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from paypal.standard.forms import PayPalPaymentsForm
+from django.core.mail import send_mail
 
 # Project imports.
-from app.models import Category, Product, Customer
+from app.models import Category, Product, Customer, Order, OrderDetail
 from app.cart import Cart
 from app.forms import CustomerForm
 
@@ -186,3 +189,65 @@ def register_order(request: HttpRequest) -> HttpResponse:
         user_data['address'] = customer.address
     
     return render(request, 'order.html', {'customer_form': CustomerForm(user_data)})
+
+
+login_required(login_url='/users/login/')
+def confirm_order(request: HttpRequest) -> HttpResponse:
+    """
+    View function to handle order confirmation.
+    """
+    if request.method == 'POST':
+        order_customer = Customer.objects.get(user=request.user)
+        total_amount = float(request.session.get('cart_total_amount'))
+        new_order = Order()
+        new_order.customer = order_customer
+        new_order.total_amount = total_amount
+        new_order.save()
+
+        order_cart = request.session.get('cart')
+        for product_id, product in order_cart.items():
+            detail = OrderDetail()
+            detail.order = new_order
+            detail.product = Product.objects.get(pk=product_id)
+            detail.quantity = product['quantity']
+            detail.subtotal = product['subtotal']
+            detail.save()
+
+        new_order.order_number = 'PED-' + new_order.created_at.strftime('%Y%m%d') + '-' + str(new_order.id)
+        new_order.save()
+
+        request.session['order_id'] = new_order.id
+
+        paypal_dict = {
+            "business": "sb-fhdlw34638368@business.example.com",
+            "amount": total_amount,
+            "item_name": 'Order - ' + new_order.order_number,
+            "invoice": new_order.order_number,
+            "notify_url": request.build_absolute_uri(reverse('paypal-ipn')),
+            "return": request.build_absolute_uri('/order/thanks'),
+            "cancel_return": request.build_absolute_uri('/'),
+        }
+
+        cart = Cart(request)
+        cart.clear()
+
+        paypal_form = PayPalPaymentsForm(initial=paypal_dict)
+
+    return render(request, 'purchase.html', {'order': new_order, 'paypal_form': paypal_form})
+
+
+login_required(login_url='/users/login/')
+def thanks(request: HttpRequest) -> HttpResponse:
+    """
+    View function to handle the order confirmation.
+    """
+    if request.GET.get('PayerID'):
+        order = Order.objects.get(pk=request.session.get('order_id'))
+        order.status = 'Delivered'
+        order.save()
+        # send_mail('Order Confirmation',
+        #           f'Your order {order.order_number} has been confirmed.',
+        #           'emitter@mail.com', [request.user.email])
+        return render(request, 'thanks.html', {'order': order})
+    return redirect('app:index')
+

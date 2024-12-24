@@ -5,7 +5,7 @@
     <li><a href="/">Home</a></li>
     <li>Order</li>
 </ul>
-<form method="post" action="#" class="register">
+<form method="post" action="{% url 'app:confirm_order' %}" class="register">
     {% csrf_token %}
     <article class="page-cont">
         <div class="page-styling">
@@ -94,7 +94,7 @@
             <div class="auth-wrap">
                 <div class="auth-col">
                     <p class="auth-submit">
-                        <input type="submit" value="Confirmar Pedido">
+                        <input type="submit" value="Confirm Order">
                     </p>
                 </div>
             </div>
